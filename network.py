@@ -4,14 +4,14 @@ class Network(object):
 
     def __init__(self, name, input_shape, output_dim):
         with tf.variable_scope(name):
-            self.input = tf.placeholder(tf.float32, shape=[None, *input_shape], name="input")
-            self.target_q = tf.placeholder(tf.float32, shape=[None, output_dim], name="target_q")
+            self.input = tf.placeholder(tf.float32, shape=[None, *input_shape], name='input')
+            self.target_q = tf.placeholder(tf.float32, shape=[None, output_dim], name='target_q')
 
             net = self.input
 
-            with tf.variable_scope("layer1"):
+            with tf.variable_scope('layer1'):
                 w = tf.Variable(tf.random_normal(
-                                (*input_shape, output_dim),0,0.01), name="w")
+                                (*input_shape, output_dim),0,0.01), name='w')
                 net = tf.matmul(net, w)
 
             self.q_out = net

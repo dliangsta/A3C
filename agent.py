@@ -13,7 +13,7 @@ class Agent(threading.Thread):
     def __init__(self, session, env, coord, name, global_network, input_shape, output_dim, lock, training, n_threads, thread_list):
         super(Agent, self).__init__()
         self.local = Network(name, input_shape, output_dim)
-        self.global_to_local = self.copy_src_to_dst("global", name)
+        self.global_to_local = self.copy_src_to_dst('global', name)
         self.global_network = global_network
         self.input_shape = input_shape
         self.output_dim = output_dim
@@ -45,12 +45,12 @@ class Agent(threading.Thread):
 
     def print_score(self):
         if len(self.rewards) >= 100:
-            message = "Test: \tall rewards=%.2f \trecent rewards=%.2f \tavg episode: %.2f \telapsed time: %f)" % (
+            message = 'Test: \tall rewards=%.2f \trecent rewards=%.2f \tavg episode: %.2f \telapsed time: %f)' % (
                 sum(self.rewards) / len(self.rewards), sum(self.rewards[-100:]) / 100, np.mean([t.episode for t in self.thread_list[:-1]]), time() - self.start_time)
             print(message)
 
     def print_episode(self):
-        message = "\t\t\t\t\t\t\t\t\t\t\t\t\t\tAgent(name=%s \tepisode=%d \tepsilon=%.2f)" % (
+        message = '\t\t\t\t\t\t\t\t\t\t\t\t\t\tAgent(name=%s \tepisode=%d \tepsilon=%.2f)' % (
             self.name, self.episode, self.epsilon)
         print(message)
 
@@ -104,7 +104,7 @@ class Agent(threading.Thread):
                 self.play_episode()
                 if len(self.rewards) >= 100:
                     if np.mean(self.rewards[-100:]) >= .78:
-                        print("Won!")
+                        print('Won!')
                         self.print_score()
                         self.coord.request_stop()
                         exit(0)
@@ -123,9 +123,9 @@ class Agent(threading.Thread):
             }))
 
     def train(self, experiences):
-        self.lock.acquire()
         states = []
         target_qs = []
+        self.lock.acquire()
         np.random.shuffle(experiences)
         for i, experience in enumerate(experiences):
             states.append(np.reshape(experience[0][0], self.input_shape))
@@ -151,6 +151,5 @@ class Agent(threading.Thread):
         for (grad, _), (placeholder, _) in zip(gradients, self.global_network.gradients_placeholders):
             feed.append((placeholder, grad))
 
-        feed = dict(feed)
-        self.sess.run(self.global_network.apply_gradients, feed)
+        self.sess.run(self.global_network.apply_gradients, dict(feed))
         self.lock.release()
