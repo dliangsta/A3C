@@ -7,7 +7,8 @@ import sys
 from network import Network
 from agent import Agent
 
-ENV_NAME = 'FrozenLake-v0'
+ENV_NAME = 'FrozenLake8x8-v0'
+
 
 def main():
     try:
@@ -26,8 +27,8 @@ def main():
         input_shape = [gym.make(ENV_NAME).observation_space.n]
         output_dim = gym.make(ENV_NAME).action_space.n
         global_network = Network(name='global',
-                                    input_shape=input_shape,
-                                    output_dim=output_dim)
+                                 input_shape=input_shape,
+                                 output_dim=output_dim)
 
         lock = threading.Lock()
         thread_list = []

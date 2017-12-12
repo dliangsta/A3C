@@ -34,60 +34,6 @@ class Agent(threading.Thread):
         if training:
             self.local = global_network
 
-    def copy_src_to_dst(self, from_scope, to_scope):
-        from_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, from_scope)
-        to_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, to_scope)
-
-        op_holder = []
-        for from_var, to_var in zip(from_vars, to_vars):
-            op_holder.append(to_var.assign(from_var))
-        return op_holder
-
-    def print_score(self):
-        if len(self.rewards) >= 100:
-            message = 'Test: \tall rewards=%.2f \trecent rewards=%.2f \tavg episode: %.2f \telapsed time: %f)' % (
-                sum(self.rewards) / len(self.rewards), sum(self.rewards[-100:]) / 100, np.mean([t.episode for t in self.thread_list[:-1]]), time() - self.start_time)
-            print(message)
-
-    def print_episode(self):
-        message = '\t\t\t\t\t\t\t\t\t\t\t\t\t\tAgent(name=%s \tepisode=%d \tepsilon=%.2f)' % (
-            self.name, self.episode, self.epsilon)
-        print(message)
-
-    def play_episode(self):
-        self.sess.run(self.global_to_local)
-
-        states = []
-        actions = []
-        rewards = []
-        total_reward = 0
-
-        s = self.env.reset()
-        s = self.onehot(self.input_shape, s, 1)
-
-        done = False
-        while not done:
-            a = self.choose_action(s)
-            s2, r, done, _ = self.env.step(a)
-            s2 = self.onehot(self.input_shape, s2, 1)
-            
-            states.append(s)
-            actions.append(a)
-            rewards.append(r)
-            
-            total_reward += r
-            s = s2
-
-        if self.training:
-            states.append(s2)
-            experiences = [((states[i], states[i+1]), actions[i], rewards[i]) for i in range(len(states) - 1)]
-            self.train(experiences)
-        else:
-            self.rewards.append(total_reward)
-
-    def onehot(self, shape, s, value):
-        return np.identity(*self.input_shape)[s:s+1] * value
-
     def run(self):
         while not self.coord.should_stop():
             self.episode += 1
@@ -103,7 +49,7 @@ class Agent(threading.Thread):
             if not self.training:
                 self.play_episode()
                 if len(self.rewards) >= 100:
-                    if np.mean(self.rewards[-100:]) >= .78:
+                    if np.mean(self.rewards[-100:]) >= .99:
                         print('Won!')
                         self.print_score()
                         self.coord.request_stop()
@@ -111,16 +57,6 @@ class Agent(threading.Thread):
 
             elif self.episode % 100 == 0:
                 self.print_episode()
-                
-
-    def choose_action(self, state):
-        if np.random.random() < self.epsilon and self.training:
-            return np.random.randint(self.output_dim)
-        else:
-            state = np.reshape(state, [-1, *self.input_shape])
-            return np.argmax(self.sess.run(self.local.q_out, feed_dict={
-                self.local.input: state
-            }))
 
     def train(self, experiences):
         states = []
@@ -153,3 +89,66 @@ class Agent(threading.Thread):
 
         self.sess.run(self.global_network.apply_gradients, dict(feed))
         self.lock.release()
+
+    def play_episode(self):
+        self.sess.run(self.global_to_local)
+
+        states = []
+        actions = []
+        rewards = []
+        total_reward = 0
+
+        s = self.env.reset()
+        s = self.onehot(self.input_shape, s, 1)
+
+        done = False
+        while not done:
+            a = self.choose_action(s)
+            s2, r, done, _ = self.env.step(a)
+            s2 = self.onehot(self.input_shape, s2, 1)
+            
+            states.append(s)
+            actions.append(a)
+            rewards.append(r)
+            
+            total_reward += r
+            s = s2
+
+        if self.training:
+            states.append(s2)
+            experiences = [((states[i], states[i+1]), actions[i], rewards[i]) for i in range(len(states) - 1)]
+            self.train(experiences)
+        else:
+            self.rewards.append(total_reward)
+
+    def choose_action(self, state):
+        if np.random.random() < self.epsilon and self.training:
+            return np.random.randint(self.output_dim)
+        else:
+            state = np.reshape(state, [-1, *self.input_shape])
+            return np.argmax(self.sess.run(self.local.q_out, feed_dict={
+                self.local.input: state
+            }))
+
+    def copy_src_to_dst(self, from_scope, to_scope):
+        from_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, from_scope)
+        to_vars = tf.get_collection(tf.GraphKeys.TRAINABLE_VARIABLES, to_scope)
+
+        op_holder = []
+        for from_var, to_var in zip(from_vars, to_vars):
+            op_holder.append(to_var.assign(from_var))
+        return op_holder
+
+    def onehot(self, shape, s, value):
+        return np.identity(*self.input_shape)[s:s+1] * value
+
+    def print_score(self):
+        if len(self.rewards) >= 100:
+            message = 'Test: \tall rewards=%.2f \trecent rewards=%.2f \tavg episode: %.2f \telapsed time: %f)' % (
+                sum(self.rewards) / len(self.rewards), sum(self.rewards[-100:]) / 100, np.mean([t.episode for t in self.thread_list[:-1]]), time() - self.start_time)
+            print(message)
+
+    def print_episode(self):
+        message = '\t\t\t\t\t\t\t\t\t\t\t\t\t\tAgent(name=%s \tepisode=%d \tepsilon=%.2f)' % (
+            self.name, self.episode, self.epsilon)
+        print(message)

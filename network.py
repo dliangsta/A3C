@@ -16,7 +16,7 @@ class Network(object):
 
             self.q_out = net
             self.loss = tf.reduce_sum(tf.square(self.target_q - self.q_out))
-            self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.02)
+            self.optimizer = tf.train.GradientDescentOptimizer(learning_rate=0.025)
 
         var_list = tf.get_collection(
             tf.GraphKeys.TRAINABLE_VARIABLES, scope=name)
@@ -27,5 +27,4 @@ class Network(object):
             self.gradients_placeholders.append(
                 (tf.placeholder(var.dtype, shape=var.get_shape()), var))
 
-        self.apply_gradients = self.optimizer.apply_gradients(
-            self.gradients_placeholders)
+        self.apply_gradients = self.optimizer.apply_gradients(self.gradients_placeholders)
