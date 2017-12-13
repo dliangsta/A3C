@@ -44,6 +44,7 @@ class Agent():
                 else:
                     recent_avg = 0.
                     recent_var = 0.
+                    
                 status_string = 'iteration: %9d, avg: %.3f, recent_avg: %.9f, recent_var: %.9f, learning_rate: %.9f' % (self.t, np.mean(rewards), recent_avg, recent_var, self.learning_rate)
                 open(self.performance_log_filename,'a').write(status_string.replace(':',',') + '\n')
 
@@ -51,7 +52,10 @@ class Agent():
                 if np.mean(rewards) >= .99:
                     print('Done!')
 
+                # Set description in TQDM bar.
                 t.set_description(status_string)
+
+                # Save.
                 self.save()
                 print()
 
@@ -82,11 +86,6 @@ class Agent():
         
             if done == True:
                 break
-
-        # Save.
-        if not train:
-            pickle.dump(self, open(self.pkl_filename,'wb'))
-
 
         self.learning_rate = max(.08, .99999 * self.learning_rate)
         return reward
