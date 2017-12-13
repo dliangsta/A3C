@@ -4,12 +4,15 @@ import numpy as np
 import pickle
 import math
 import random
+import os
 from tqdm import trange
 
 class Agent(object):
     def __init__(self, run_dir, save_dir):
         self.run_dir = run_dir
         self.save_dir = save_dir
+        self.performance_log_filename = save_dir + 'data/performance_log.csv'
+        self.pkl_filename = save_dir + 'data/agent.pkl'
 
         self.env = gym.make('maze-sample-3x3-v0')
         self.dim = 3
@@ -19,30 +22,35 @@ class Agent(object):
         self.c = 5
         # self.delta = .01
         self.delta = .1
-        # self.delta = .99
         # self.epsilon = .01
         self.epsilon = .1
-        # self.epsilon = .99
-
         self.discount_rate = .99
 
-        initial_value = math.log(1. * self.c * self.os_n * self.as_n / self.delta)
-        self.Q_up = np.zeros([self.os_n, self.as_n]) + initial_value
-        self.Q_down = np.zeros([self.os_n, self.as_n]) - initial_value
-        self.n = np.ones([self.os_n, self.as_n])
-        self.U = [list([j for j in range(self.as_n)]) for i in range(self.os_n)]
 
-        self.performance_log_filename = save_dir + 'data/performance_log.csv'
-        self.pkl_filename = save_dir + 'data/agent.pkl'
+        if os.path.isfile(self.pkl_filename):
+            print('loaded')
+            saved_data = pickle.load(open(self.pkl_filename, 'rb'))
+            self.Q_up = saved_data[0]
+            self.Q_down = saved_data[1]
+            self.n = saved_data[2]
+            self.U = saved_data[3]
+            self.iteration = saved_data[4]
+        else:
+            initial_value = math.log(1. * self.c * self.os_n * self.as_n / self.delta)
+            self.Q_up = np.zeros([self.os_n, self.as_n]) + initial_value
+            self.Q_down = np.zeros([self.os_n, self.as_n]) - initial_value
+            self.n = np.ones([self.os_n, self.as_n])
+            self.U = [list([j for j in range(self.as_n)]) for i in range(self.os_n)]
+            self.iteration = 0
+
+
 
         self.model_free_action_elimination()
 
 
     def model_free_action_elimination(self):
         s = self.reset()
-        iteration = 0
         while True:
-                # self.save()
             self.U[s] = list()
             V_down = np.max(self.Q_down[s])
 
@@ -64,11 +72,13 @@ class Agent(object):
             s = s_next
             # print(self.Q_up[s][a], self.Q_down[s][a])
 
-            iteration += 1
+            self.iteration += 1
 
-            if iteration % 1000 == 0:
-                print(iteration)
+            if self.iteration % 1000 == 0:
+                print(self.iteration)
                 self.check_stopping_conditions()
+                self.save()    
+            
 
             if done:
                 # print('done! reward: %d, state: %d' % (r, s))
@@ -106,5 +116,5 @@ class Agent(object):
             
 
     def save(self):
-        pickle.dump(self, open(self.pkl_filename,'wb'))
+        pickle.dump((self.Q_up, self.Q_down, self.n, self.U, self.iteration), open(self.pkl_filename,'wb'))
     

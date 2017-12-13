@@ -10,13 +10,7 @@ def main():
     if not os.path.exists(args.save_dir + 'data/'):
         os.mkdir(args.save_dir + 'data/')
     
-    if os.path.isfile(args.save_dir + 'data/agent.pkl'):
-        agent = pickle.load(open(args.save_dir + 'data/agent.pkl','rb'))
-        agent.iteration += 1
-        print('loaded')
-    else:
-        agent = Agent(args.run_dir, args.save_dir)
-        open(args.save_dir + 'data/performance_log.csv','w').close()
+    agent = Agent(args.run_dir, args.save_dir)
     
     agent.train()
 
